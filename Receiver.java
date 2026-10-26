@@ -1,8 +1,11 @@
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 
 public class Receiver {
     public static final int CHUNK_SIZE = 256 * 1024;
@@ -61,12 +64,18 @@ public class Receiver {
     }
 
     public static void main(String[] args) {
-        File file = new File("battle-log.png");
-        Chunk[] chunks = new Chunk[0];
         try {
-            chunks = FileChunker.chunk(file);
-            receive(chunks);
-        } catch (IOException e) {
+            Socket socket = new Socket("127.0.0.1", 8189);
+            InputStream in = socket.getInputStream();
+            ArrayList<Chunk> chunksBuffer = new ArrayList<>();
+
+            while(in.available() > 0)
+                chunksBuffer.add(new Chunk(in.readNBytes(CHUNK_SIZE)));
+            in.close();
+            socket.close();
+
+            receive(chunksBuffer.toArray(new Chunk[0]));
+        } catch(Exception e) {
             System.err.println(e);
         }
     }
