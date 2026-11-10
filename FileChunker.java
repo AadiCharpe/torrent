@@ -20,4 +20,10 @@ public class FileChunker {
 
         return chunksBuffer.toArray(new Chunk[0]);
     }
+
+    protected static byte[][] chunkArrToByte2DArr(Chunk[] chunks) {
+        byte[][] bytes = new byte[chunks.length][];
+        for(int i = 0; i < chunks.length; i++) bytes[i] = chunks[i].bytes();
+        return bytes;
+    }
 }

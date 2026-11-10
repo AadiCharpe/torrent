@@ -1,3 +1,4 @@
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -10,16 +11,18 @@ import java.util.ArrayList;
 public class Receiver {
     public static final int CHUNK_SIZE = 256 * 1024;
 
-    public static File receive(Chunk[] chunks) throws IOException {
-        File f = new File("output");
+    public static File receive(Chunk[] chunks, String name) throws IOException {
+        File f = new File(name);
         FileOutputStream fout = new FileOutputStream(f);
 
         for (Chunk chunk : chunks) {
+            System.out.println(chunk.bytes().length);
             fout.write(chunk.bytes());
         }
         fout.close();
 
-        return addExtension(f);
+        //return addExtension(f);
+        return f;
     }
 
     private static File addExtension(File f) throws IOException {
@@ -65,16 +68,24 @@ public class Receiver {
 
     public static void main(String[] args) {
         try {
-            Socket socket = new Socket("127.0.0.1", 8189);
+            Socket socket = new Socket(args[0], Integer.parseInt(args[1]));
             InputStream in = socket.getInputStream();
+
+            DataInputStream din = new DataInputStream(in);
+            Manifest m = Manifest.read(din);
+            System.out.println(m);
+
             ArrayList<Chunk> chunksBuffer = new ArrayList<>();
 
-            while(in.available() > 0)
-                chunksBuffer.add(new Chunk(in.readNBytes(CHUNK_SIZE)));
-            in.close();
+            
+            for (int i = 0; i < m.hashes().length; i++)
+                chunksBuffer.add(new Chunk(din.readNBytes(CHUNK_SIZE)));
+            din.close();
             socket.close();
 
-            receive(chunksBuffer.toArray(new Chunk[0]));
+            System.out.println("buff size: " + chunksBuffer.size());
+
+            receive(chunksBuffer.toArray(new Chunk[0]), args[2]);
         } catch(Exception e) {
             System.err.println(e);
         }

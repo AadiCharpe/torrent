@@ -2,15 +2,8 @@ import java.io.File;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashMap;
 
 public class Socketer {
-    private static HashMap<String, byte[][]> directory;
-
-    public Socketer() {
-        directory = new HashMap<>();
-    }
-
     public static void main(String[] args) {
         try {
             ServerSocket ss = new ServerSocket(8189);
@@ -23,11 +16,19 @@ public class Socketer {
                         try {
                             chunks = FileChunker.chunk(file);
                             OutputStream stream = receiver.getOutputStream();
+
+                            Chunk[] hashedChunks;
+                            hashedChunks = Hasher.hash_file(chunks);
+
+                            Manifest m = new Manifest(file.getName(), file.length(), FileChunker.CHUNK_SIZE, FileChunker.chunkArrToByte2DArr(hashedChunks));
+                            System.out.println(m);
+
+                            stream.write(m.toBytes());
                             for(Chunk chunk : chunks)
                                 stream.write(chunk.bytes());
+
                             stream.close();
                             receiver.close();
-                            ss.close();
                         } catch(Exception e) {
                             System.err.println(e);
                         }
